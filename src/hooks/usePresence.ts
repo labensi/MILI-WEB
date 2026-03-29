@@ -1,0 +1,30 @@
+import { useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
+import { realtimeService } from '../firebase/realtime';
+
+export const usePresence = () => {
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const handleVisibilityChange = () => {
+      const isOnline = document.visibilityState === 'visible';
+      realtimeService.setUserPresence(user.uid, isOnline);
+    };
+
+    const handleBeforeUnload = () => {
+      realtimeService.setUserPresence(user.uid, false);
+    };
+
+    realtimeService.setUserPresence(user.uid, true);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      realtimeService.setUserPresence(user.uid, false);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user]);
+};
