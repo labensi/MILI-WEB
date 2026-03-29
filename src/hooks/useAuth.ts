@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { auth } from '../firebase/config';
+import { auth, db } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export const useAuth = () => {
   const { user, isLoading, setUser, setLoading } = useAuthStore();
@@ -10,8 +11,6 @@ export const useAuth = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const { db } = await import('../firebase/firestore');
-        const { doc, getDoc } = await import('firebase/firestore');
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
         if (userDoc.exists()) {
           setUser(userDoc.data() as any);

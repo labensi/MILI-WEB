@@ -19,6 +19,8 @@ services:
         sync: false
       - key: VITE_FIREBASE_MEASUREMENT_ID
         sync: false
+      - key: VITE_FIREBASE_DATABASE_URL
+        sync: false
     routes:
       - type: rewrite
         source: /*
