@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 import { useAuthStore } from './store/authStore';
+import { ThemeProvider } from './components/theme';
 import { AuthPage } from './pages/AuthPage';
 import { MainPage } from './pages/MainPage';
 import { FeedPage } from './pages/FeedPage';
@@ -54,8 +55,9 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 function App() {
   return (
-    <HelmetProvider>
-      <Router>
+    <ThemeProvider>
+      <HelmetProvider>
+        <Router>
         <Toaster
           position="top-center"
           toastOptions={{
@@ -113,7 +115,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
-    </HelmetProvider>
+        </HelmetProvider>
+    </ThemeProvider>
   );
 }
 

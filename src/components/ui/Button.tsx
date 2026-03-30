@@ -2,11 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'icon';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ReactNode;
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  fullWidth?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -17,30 +18,37 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   className = '',
   disabled,
+  fullWidth = false,
   ...props
 }) => {
-  const baseStyles = 'rounded-full font-semibold transition-all duration-300 flex items-center justify-center gap-2';
+  const baseStyles = 'rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2';
   
   const variants = {
-    primary: 'bg-gradient-to-r from-[var(--accent)] to-[#ff9a9e] text-white hover:scale-105 hover:shadow-lg hover:shadow-[var(--accent-glow)]',
-    secondary: 'bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 hover:scale-105',
-    danger: 'bg-red-500/80 text-white hover:bg-red-600 hover:scale-105',
-    ghost: 'bg-transparent text-white hover:bg-white/10 hover:scale-105',
+    primary: 'btn-primary',
+    secondary: 'btn-secondary',
+    danger: 'bg-red-500/70 text-white hover:bg-red-600 hover:scale-105',
+    ghost: 'btn-ghost',
+    icon: 'btn-icon',
   };
   
   const sizes = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-5 py-2.5 text-base',
-    lg: 'px-8 py-3 text-lg',
+    lg: 'px-8 py-3.5 text-lg',
   };
   
   return (
     <motion.button
       whileHover={{ scale: disabled || loading ? 1 : 1.05 }}
       whileTap={{ scale: disabled || loading ? 1 : 0.95 }}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${
-        disabled || loading ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
+      className={`
+        ${baseStyles}
+        ${variants[variant]}
+        ${size !== 'icon' ? sizes[size] : ''}
+        ${fullWidth ? 'w-full' : ''}
+        ${disabled || loading ? 'opacity-60 cursor-not-allowed' : ''}
+        ${className}
+      `}
       disabled={disabled || loading}
       {...props}
     >
@@ -51,7 +59,7 @@ export const Button: React.FC<ButtonProps> = ({
         </svg>
       )}
       {icon && !loading && icon}
-      {children}
+      {!loading && children}
     </motion.button>
   );
 };

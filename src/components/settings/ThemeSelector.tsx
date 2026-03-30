@@ -1,43 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Moon, Sun, Volume2, VolumeX, Palette } from 'lucide-react';
-import { useThemeStore } from '../../store/themeStore';
+import { useThemeStore, themePresets } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
 import { firestoreService } from '../../firebase/firestore';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import toast from 'react-hot-toast';
-
-const themes = [
-  {
-    id: 'spring',
-    name: 'Spring Bloom',
-    icon: '🌸',
-    colors: ['#ff9a9e', '#fecfef', '#98fb98'],
-    description: 'Cherry blossoms and soft pastels',
-  },
-  {
-    id: 'summer',
-    name: 'Summer Glow',
-    icon: '☀️',
-    colors: ['#fad961', '#f76b1c', '#ffd700'],
-    description: 'Warm sunshine and golden rays',
-  },
-  {
-    id: 'autumn',
-    name: 'Autumn Leaves',
-    icon: '🍂',
-    colors: ['#ff9966', '#ff5e62', '#8b4513'],
-    description: 'Cozy amber and rust colors',
-  },
-  {
-    id: 'winter',
-    name: 'Winter Snow',
-    icon: '❄️',
-    colors: ['#a6c1ee', '#fbc2eb', '#b8e1fc'],
-    description: 'Ice blue and silver white',
-  },
-];
 
 export const ThemeSelector: React.FC = () => {
   const { currentTheme, darkMode, setTheme, setDarkMode } = useThemeStore();
@@ -48,107 +17,134 @@ export const ThemeSelector: React.FC = () => {
   const handleThemeChange = async (themeId: string) => {
     setTheme(themeId);
     if (user) {
-      await firestoreService.updateUser(user.uid, { theme: themeId });
-      toast.success(`Theme changed to ${themes.find(t => t.id === themeId)?.name}!`);
+      try {
+        await firestoreService.updateUser(user.uid, { theme: themeId });
+        toast.success(`Theme changed to ${themeId}`);
+      } catch (error) {
+        toast.error('Failed to save theme preference');
+      }
     }
   };
 
-  const handleDarkModeToggle = async () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
+  const handleDarkModeToggle = async (enabled: boolean) => {
+    setDarkMode(enabled);
     if (user) {
-      await firestoreService.updateUser(user.uid, { darkMode: newDarkMode });
+      try {
+        await firestoreService.updateUser(user.uid, { darkMode: enabled });
+        toast.success(enabled ? 'Dark mode enabled' : 'Dark mode disabled');
+      } catch (error) {
+        toast.error('Failed to save dark mode preference');
+      }
     }
   };
 
-  const handleSoundToggle = () => {
-    setSoundEnabled(!soundEnabled);
-    if (!soundEnabled) {
-      // Play ambient sound would go here
-      toast.success('Ambient sounds enabled');
-    } else {
-      toast.success('Ambient sounds disabled');
-    }
-  };
+  const themes = Object.values(themePresets);
 
   return (
     <div className="space-y-6">
-      {/* Seasonal Themes */}
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-          <Palette size={20} />
-          Seasonal Themes
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Theme Selector */}
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Palette className="w-5 h-5" />
+          <h3 className="text-xl font-semibold">Themes</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {themes.map((theme) => (
             <motion.button
               key={theme.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.05, y: -4 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleThemeChange(theme.id)}
-              className={`p-4 rounded-xl transition-all ${
-                currentTheme === theme.id
-                  ? 'ring-2 ring-[var(--accent)] bg-white/10'
-                  : 'bg-white/5 hover:bg-white/10'
-              }`}
+              className={`
+                glass-panel p-4 text-center rounded-lg transition-all
+                ${currentTheme === theme.id ? 'ring-2 ring-[var(--theme-accent)]' : ''}
+                hover:border-[var(--theme-accent)]
+              `}
             >
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-3xl">{theme.icon}</span>
-                <div>
-                  <h4 className="text-white font-semibold">{theme.name}</h4>
-                  <p className="text-white/50 text-sm">{theme.description}</p>
-                </div>
-              </div>
-              <div className="flex gap-1">
-                {theme.colors.map((color, idx) => (
+              {/* Emoji */}
+              <div className="text-4xl mb-3">{theme.emoji}</div>
+
+              {/* Name */}
+              <p className="font-semibold text-lg mb-1">{theme.name}</p>
+
+              {/* Color preview */}
+              <div className="flex gap-2 mb-3 justify-center">
+                {theme.gradient.includes('linear-gradient') && (
                   <div
-                    key={idx}
-                    className="w-8 h-8 rounded-full"
-                    style={{ backgroundColor: color }}
+                    className="w-6 h-6 rounded-full border border-white/20"
+                    style={{
+                      background: theme.gradient.split('to ')[1]?.split('(')[1]?.split(',')[0] || theme.accent,
+                    }}
                   />
-                ))}
+                )}
               </div>
+
+              {/* Active indicator */}
+              {currentTheme === theme.id && (
+                <div className="text-xs font-semibold text-[var(--theme-accent)]">✓ Active</div>
+              )}
             </motion.button>
           ))}
         </div>
       </div>
 
-      {/* Dark/Light Mode Toggle */}
-      <GlassCard className="p-4">
+      {/* Dark Mode Toggle */}
+      <div className="glass-card p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-white font-semibold">Dark / Light Mode</h4>
-            <p className="text-white/50 text-sm">Switch between dark and light themes</p>
+          <div className="flex items-center gap-3">
+            {darkMode ? (
+              <Moon className="w-5 h-5" />
+            ) : (
+              <Sun className="w-5 h-5" />
+            )}
+            <div>
+              <h4 className="font-semibold">Dark Mode</h4>
+              <p className="text-sm text-white/60">
+                {darkMode ? 'Enabled' : 'Disabled'}
+              </p>
+            </div>
           </div>
           <Button
-            onClick={handleDarkModeToggle}
-            variant="secondary"
-            icon={darkMode ? <Moon size={18} /> : <Sun size={18} />}
+            variant={darkMode ? 'primary' : 'secondary'}
+            onClick={() => handleDarkModeToggle(!darkMode)}
           >
-            {darkMode ? 'Dark Mode' : 'Light Mode'}
+            {darkMode ? 'On' : 'Off'}
           </Button>
         </div>
-      </GlassCard>
+      </div>
 
-      {/* Ambient Sound */}
-      <GlassCard className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h4 className="text-white font-semibold">Ambient Sound</h4>
-            <p className="text-white/50 text-sm">Background sounds for each season</p>
+      {/* Sound Settings */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {soundEnabled ? (
+              <Volume2 className="w-5 h-5" />
+            ) : (
+              <VolumeX className="w-5 h-5" />
+            )}
+            <div>
+              <h4 className="font-semibold">Sound Effects</h4>
+              <p className="text-sm text-white/60">
+                {soundEnabled ? 'Enabled' : 'Disabled'}
+              </p>
+            </div>
           </div>
           <Button
-            onClick={handleSoundToggle}
-            variant="secondary"
-            icon={soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            variant={soundEnabled ? 'primary' : 'secondary'}
+            onClick={() => setSoundEnabled(!soundEnabled)}
           >
-            {soundEnabled ? 'Enabled' : 'Disabled'}
+            {soundEnabled ? 'On' : 'Off'}
           </Button>
         </div>
-        
+
         {soundEnabled && (
-          <div className="mt-3">
-            <label className="block text-white/70 text-sm mb-2">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mt-4 pt-4 border-t border-white/10"
+          >
+            <label className="block text-sm font-medium mb-3">
               Volume: {volume}%
             </label>
             <input
@@ -156,12 +152,19 @@ export const ThemeSelector: React.FC = () => {
               min="0"
               max="100"
               value={volume}
-              onChange={(e) => setVolume(parseInt(e.target.value))}
-              className="w-full"
+              onChange={(e) => setVolume(Number(e.target.value))}
+              className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[var(--theme-accent)]"
             />
-          </div>
+          </motion.div>
         )}
-      </GlassCard>
+      </div>
+
+      {/* Theme Info */}
+      <div className="glass-card p-4 bg-white/5">
+        <p className="text-sm text-white/70">
+          💡 <strong>Tip:</strong> Your theme choice is saved and will be applied when you log back in.
+        </p>
+      </div>
     </div>
   );
 };
